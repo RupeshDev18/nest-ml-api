@@ -5,17 +5,19 @@ import {
   UploadedFile,
   BadRequestException,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { UploadService } from './upload.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CsvQueueService } from 'src/queue/csv.queue.service';
 
 @Controller('upload')
 @UseGuards(JwtAuthGuard)
 export class UploadController {
-  constructor(private uploadService: UploadService) {}
+  constructor(private uploadService: UploadService,private csvQueueService: CsvQueueService,) {}
 
   @Post()
   @UseInterceptors(
@@ -37,8 +39,13 @@ export class UploadController {
       limits: { fileSize: 2 * 1024 * 1024 }, // Max 2MB
     }),
   )
-  async uploadCSV(@UploadedFile() file: Express.Multer.File) {
+  async uploadCSV(@UploadedFile() file: Express.Multer.File, @Req() req: any) {
     if (!file) throw new BadRequestException('File is required');
-    return this.uploadService.saveFileInfo(file);
+    
+    const fileInfo = this.uploadService.saveFileInfo(file);
+
+    await this.csvQueueService.queueCsvProcessingJob(file.path, req.user?.id ?? 'anonymous');
+
+    return { message: 'File uploaded and queued successfully', file: fileInfo };
   }
 }

@@ -6,6 +6,7 @@ import { UsersModule } from './users/users.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './users/user.entity';
 import { UploadModule } from './upload/upload.module';
+import { QueueModule } from './queue/queue.module';
 
 
 @Module({
@@ -19,8 +20,10 @@ import { UploadModule } from './upload/upload.module';
     AuthModule,
     UsersModule,
     UploadModule,
+    QueueModule,
   ],
   controllers: [AppController],
-  providers: [AppService]
+  providers: [AppService],
+  exports:[QueueModule]
 })
 export class AppModule {}
