@@ -1,31 +1,44 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
+import * as fs from 'fs';
+import * as FormData from 'form-data';
+import axios from 'axios';
+import { Inject } from '@nestjs/common';
+import { CsvUploadService } from 'src/csv-upload/csv-upload.service';
 
-@Processor('csv') // 'csv' is the queue name
+@Processor('csv')
 export class CsvProcessor extends WorkerHost {
+    constructor(
+    @Inject(CsvUploadService)
+    private readonly csvUploadService: CsvUploadService,
+  ) {
+    super();
+  }
   async process(job: Job): Promise<any> {
-    switch (job.name) {
-      case 'process-csv': {
-        const { filePath, userId } = job.data;
+    if (job.name !== 'process-csv') return;
 
-        console.log(`🚀 Processing CSV for user ${userId}: ${filePath}`);
+    const { filePath, userId } = job.data;
 
-        // Simulate time-consuming work
-        let progress = 0;
-        for (let i = 0; i <= 100; i += 10) {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-          progress = i;
-          await job.updateProgress(progress);
-        }
+    const form = new FormData();
+    form.append('file', fs.createReadStream(filePath));
 
-        console.log(`✅ Done processing ${filePath}`);
-        return { status: 'done', userId };
-      }
+    try {
+      const response = await axios.post('http://localhost:8000/process-csv/', form, {
+        headers: form.getHeaders(),
+      });
 
-      default: {
-        console.warn(`⚠️ Unknown job type: ${job.name}`);
-        return {};
-      }
+      console.log(`✅ Python response:`, response.data);
+      await this.csvUploadService.saveUpload({
+        userId,
+        filename: response.data.filename,
+        rowCount: response.data.row_count,
+        sampleData: response.data.sample_data,
+        });
+      
+      return response.data;
+    } catch (error) {
+      console.error(`❌ Error calling Python service:`, error.message);
+      return { error: error.message };
     }
   }
 }
