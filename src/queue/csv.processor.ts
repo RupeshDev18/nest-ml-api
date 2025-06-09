@@ -5,12 +5,14 @@ import * as FormData from 'form-data';
 import axios from 'axios';
 import { Inject } from '@nestjs/common';
 import { CsvUploadService } from 'src/csv-upload/csv-upload.service';
+import { MailService } from 'src/mail/mail.service';
 
 @Processor('csv')
 export class CsvProcessor extends WorkerHost {
     constructor(
     @Inject(CsvUploadService)
     private readonly csvUploadService: CsvUploadService,
+    private readonly mailService: MailService,
   ) {
     super();
   }

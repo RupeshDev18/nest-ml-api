@@ -9,4 +9,7 @@ export class CsvUploadController {
   async getAll() {
     return this.csvUploadService.getAllUploads();
   }
+
+  
 }
+

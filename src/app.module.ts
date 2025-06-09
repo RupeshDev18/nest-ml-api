@@ -10,6 +10,9 @@ import { QueueModule } from './queue/queue.module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CsvUploadService } from './csv-upload/csv-upload.service';
 import { CsvUploadController } from './csv-upload/csv-upload.controller';
+import { CsvQueueService } from './queue/csv.queue.service';
+import { CsvJobController } from './csv-upload/csv-upload.csv-job.controller';
+import { MailService } from './mail/mail.service';
 
 @Module({
   imports: [
@@ -24,9 +27,10 @@ import { CsvUploadController } from './csv-upload/csv-upload.controller';
     UsersModule,
     UploadModule,
     QueueModule,
+    CsvJobController
   ],
   controllers: [AppController, CsvUploadController],
-  providers: [AppService, CsvUploadService],
-  exports:[QueueModule]
+  providers: [AppService, CsvUploadService, MailService],
+  exports:[QueueModule,CsvQueueService,MailService]
 })
 export class AppModule {}
